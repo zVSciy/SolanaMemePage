@@ -12,7 +12,7 @@ A cyberpunk-themed Solana dashboard featuring real-time price data, network stat
 - **Interactive Charts** - Price history and network activity visualization
 - **Meme Aesthetics** - Floating emojis, neon effects, and bouncing animations
 
-## 🛠Tech Stack
+## Tech Stack
 
 - **Frontend**: Vanilla JavaScript, CSS3, HTML5
 - **Charts**: Chart.js
