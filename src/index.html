@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Moon Dashboard 🚀</title>
+    <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Background Video -->
+        <video class="background-video" autoplay muted loop>
+            <source src="assets/SaveTwitter.Net_1-vxWYYM6hFrth0-_(720p).mp4" type="video/mp4">
+        </video>
+
+        <!-- Background Audio -->
+        <audio id="backgroundAudio1" loop>
+            <source src="assets/SaveTwitter.Net-1859786065365827584-(128kbps).mp3" type="audio/mpeg">
+        </audio>
+        <audio id="backgroundAudio2" loop>
+            <source src="assets/SaveTwitter.Net-1873924385205346307-(128kbps).mp3" type="audio/mpeg">
+        </audio>
+
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">🌙 SOLANA MOON 🚀</h1>
+                <div class="header-actions">
+                    <button id="audioToggle" class="neon-btn audio-btn">🔊 SOUND ON</button>
+                    <button id="connectWallet" class="neon-btn">CONNECT WALLET</button>
+                    <div id="walletInfo" class="wallet-info hidden">
+                        <span id="walletAddress"></span>
+                        <span id="solBalance"></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard">
+            <div class="meme-banner">
+                <div class="meme-text">TO THE MOON! 🚀</div>
+                <div class="meme-text secondary">DIAMOND HANDS 💎🙌</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>SOL PRICE</h3>
+                    <div class="stat-value" id="solPrice">$0.00</div>
+                    <div class="stat-change" id="priceChange">+0.00%</div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>NETWORK TPS</h3>
+                    <div class="stat-value" id="networkTps">0</div>
+                    <div class="stat-label">Transactions/sec</div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>VALIDATORS</h3>
+                    <div class="stat-value" id="validators">0</div>
+                    <div class="stat-label">Active</div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>EPOCH</h3>
+                    <div class="stat-value" id="currentEpoch">0</div>
+                    <div class="stat-label">Current</div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3>SOL PRICE CHART</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>NETWORK ACTIVITY</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="memecoin-section">
+                <h3>🚀 NEW MEMECOIN LAUNCHES 🚀</h3>
+                <div class="memecoin-filters">
+                    <button class="filter-btn active" data-filter="all">ALL</button>
+                    <button class="filter-btn" data-filter="pumpfun">PUMP.FUN</button>
+                    <button class="filter-btn" data-filter="raydium">RAYDIUM</button>
+                </div>
+                <div class="memecoin-table-container">
+                    <table class="memecoin-table">
+                        <thead>
+                            <tr>
+                                <th>TOKEN</th>
+                                <th>NAME</th>
+                                <th>PRICE</th>
+                                <th>CHANGE 24H</th>
+                                <th>MARKET CAP</th>
+                                <th>VOLUME</th>
+                                <th>PLATFORM</th>
+                                <th>🚀</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memecoinTableBody">
+                            <!-- Memecoin data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div class="floating-memes">
+            <div class="floating-meme">🚀</div>
+            <div class="floating-meme">💎</div>
+            <div class="floating-meme">🌙</div>
+            <div class="floating-meme">⚡</div>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
+    <script src="js/wallet.js"></script>
+</body>
+</html>
