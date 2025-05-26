@@ -5,8 +5,8 @@
   "main": "src/js/app.js",
   "scripts": {
     "build": "webpack --mode production",
-    "dev": "webpack serve --mode development --host 0.0.0.0",
-    "start": "webpack serve --mode development --host 0.0.0.0 --open",
+    "dev": "webpack serve --mode development",
+    "start": "webpack serve --mode development --open",
     "docker:build": "docker build -t solana-moon-dashboard .",
     "docker:run": "docker run -p 9000:9000 solana-moon-dashboard",
     "docker:dev": "docker-compose up --build",

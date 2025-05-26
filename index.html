@@ -10,10 +10,9 @@ class SolanaMoonDashboard {
         this.currentFilter = 'all';
         this.memecoins = [];
         this.priceHistory = [];
-        this.audioEnabled = true;
+        this.audioEnabled = true; // Start with audio enabled
         this.currentAudioIndex = 0;
         this.audioTracks = [];
-        this.tradingViewSocket = null;
         this.init();
     }
 
@@ -25,6 +24,7 @@ class SolanaMoonDashboard {
         await this.loadMemecoinData();
         this.startDataRefresh();
         this.showMemeMessages();
+        // Start audio immediately - no delay
         this.enableAudio();
     }
 
@@ -83,13 +83,7 @@ class SolanaMoonDashboard {
         const audioBtn = document.getElementById('audioToggle');
         audioBtn.addEventListener('click', () => this.toggleAudio());
 
-        // Download button for Blackpaper
-        const downloadBtn = document.getElementById('downloadBlackpaper');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => this.downloadBlackpaper());
-        }
-
-        // Set initial audio button state
+        // Set initial audio button state - already ON
         audioBtn.textContent = '🔊 SOUND ON';
         audioBtn.classList.remove('muted');
 
@@ -112,23 +106,10 @@ class SolanaMoonDashboard {
                 }
             }
         }, { once: true });
-    }
 
-    downloadBlackpaper() {
-        try {
-            const link = document.createElement('a');
-            link.href = './assets/Blackpaper.pdf';
-            link.download = 'Solana_Moon_Blackpaper.pdf';
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            this.showSuccessMessage('🚀 BLACKPAPER DOWNLOADED! READ THE SACRED TEXTS! 📄');
-        } catch (error) {
-            console.error('Download failed:', error);
-            alert('❌ Download failed. The sacred texts remain protected! 📄');
-        }
+        // Download blackpaper button
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        downloadBtn.addEventListener('click', () => this.downloadBlackpaper());
     }
 
     async connectWallet() {
@@ -177,78 +158,7 @@ class SolanaMoonDashboard {
 
     async updatePrice() {
         try {
-            // Use TradingView API for real-time Solana price
-            const response = await fetch('https://scanner.tradingview.com/global/scan', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    filter: [
-                        { left: "name", operation: "match", right: "SOLUSD" }
-                    ],
-                    options: {
-                        lang: "en"
-                    },
-                    symbols: {
-                        query: {
-                            types: []
-                        },
-                        tickers: ["BINANCE:SOLUSD"]
-                    },
-                    columns: ["name", "close", "change", "change_abs", "Recommend.All"],
-                    sort: { sortBy: "name", sortOrder: "asc" },
-                    range: [0, 1]
-                })
-            });
-
-            const data = await response.json();
-            
-            if (data.data && data.data.length > 0) {
-                const solData = data.data[0];
-                const price = solData.d[1]; // close price
-                const change = solData.d[2]; // change percentage
-                
-                document.getElementById('solPrice').textContent = `$${price.toFixed(2)}`;
-                const changeElement = document.getElementById('priceChange');
-                changeElement.textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
-                changeElement.style.color = change > 0 ? '#00ff88' : '#ff4444';
-                
-                // Fetch historical data from TradingView
-                await this.fetchTradingViewHistory();
-            } else {
-                throw new Error('No TradingView data received');
-            }
-        } catch (error) {
-            console.error('Failed to update price from TradingView:', error);
-            // Fallback to CoinGecko
-            await this.updatePriceFallback();
-        }
-    }
-
-    async fetchTradingViewHistory() {
-        try {
-            const now = Math.floor(Date.now() / 1000);
-            const threeDaysAgo = now - (3 * 24 * 60 * 60);
-            
-            const response = await fetch(`https://api.tradingview.com/v1/history?symbol=BINANCE:SOLUSD&resolution=60&from=${threeDaysAgo}&to=${now}`);
-            const data = await response.json();
-            
-            if (data.s === 'ok' && data.c) {
-                this.priceHistory = data.c; // closing prices
-                this.updatePriceChart();
-            } else {
-                throw new Error('TradingView history fetch failed');
-            }
-        } catch (error) {
-            console.error('TradingView history error:', error);
-            this.generateMock3DayData();
-        }
-    }
-
-    async updatePriceFallback() {
-        try {
-            // Fallback to Jupiter + CoinGecko
+            // Use Jupiter API for more reliable Solana price data
             const jupiterResponse = await fetch('https://price.jup.ag/v4/price?ids=So11111111111111111111111111111111111111112');
             const jupiterData = await jupiterResponse.json();
             
@@ -256,6 +166,7 @@ class SolanaMoonDashboard {
                 const solData = jupiterData.data.So11111111111111111111111111111111111111112;
                 const price = solData.price;
                 
+                // Get 24h change from CoinGecko as backup
                 const cgResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&include_24hr_change=true');
                 const cgData = await cgResponse.json();
                 const change24h = cgData.solana ? cgData.solana.usd_24h_change : 0;
@@ -265,7 +176,7 @@ class SolanaMoonDashboard {
                 changeElement.textContent = `${change24h > 0 ? '+' : ''}${change24h.toFixed(2)}%`;
                 changeElement.style.color = change24h > 0 ? '#00ff88' : '#ff4444';
                 
-                // Get historical data from CoinGecko
+                // Get 3 days of price history from CoinGecko
                 const historyResponse = await fetch('https://api.coingecko.com/api/v3/coins/solana/market_chart?vs_currency=usd&days=3&interval=hourly');
                 const historyData = await historyResponse.json();
                 
@@ -275,9 +186,24 @@ class SolanaMoonDashboard {
                 }
             }
         } catch (error) {
-            console.error('Fallback price update failed:', error);
+            console.error('Failed to update price:', error);
+            // Fallback to mock 3-day data
             this.generateMock3DayData();
         }
+    }
+
+    generateMock3DayData() {
+        const basePrice = 150;
+        this.priceHistory = [];
+        
+        for (let i = 0; i < 72; i++) { // 72 hours = 3 days
+            const variation = (Math.random() - 0.5) * 20;
+            const price = basePrice + variation + Math.sin(i / 12) * 10;
+            this.priceHistory.push(price);
+        }
+        
+        this.updatePriceChart();
+        document.getElementById('solPrice').textContent = `$${this.priceHistory[this.priceHistory.length - 1].toFixed(2)}`;
     }
 
     async updateNetworkStats() {
@@ -792,6 +718,18 @@ class SolanaMoonDashboard {
         setTimeout(() => {
             document.body.removeChild(successDiv);
         }, 3000);
+    }
+
+    downloadBlackpaper() {
+        // Simulate blackpaper download
+        const link = document.createElement('a');
+        link.href = '/path/to/blackpaper.pdf'; // Update with actual path
+        link.download = 'SolanaMoon_Blackpaper.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        this.showSuccessMessage('📥 Downloading Blackpaper... Check your browser\'s download section! 📄');
     }
 }
 
