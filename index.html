@@ -10,17 +10,10 @@
 <body>
     <div class="app">
         <!-- Background Video -->
-        <video class="background-video" autoplay muted loop>
+        <video class="background-video" autoplay loop muted playsinline id="backgroundVideo" preload="auto">
             <source src="./src/assets/SaveTwitter.Net_1-vxWYYM6hFrth0-_(720p).mp4" type="video/mp4">
+            <p>Your browser doesn't support video playback.</p>
         </video>
-
-        <!-- Audio Elements -->
-        <audio id="backgroundAudio1" loop>
-            <source src="./src/assets/audio1.mp3" type="audio/mpeg">
-        </audio>
-        <audio id="backgroundAudio2" loop>
-            <source src="./src/assets/audio2.mp3" type="audio/mpeg">
-        </audio>
 
         <!-- Header -->
         <header class="header">
@@ -37,7 +30,7 @@
                     </div>
 
                     <!-- Audio Toggle Button -->
-                    <button id="audioToggle" class="audio-btn" type="button">🔊 SOUND ON</button>
+                    <button id="audioToggle" class="audio-btn" type="button">🔇 SOUND OFF</button>
                     
                     <!-- Download Blackpaper Button - Fetch-based approach -->
                     <button id="downloadBlackpaper" class="download-btn" type="button" title="Download Solana Moon Blackpaper">
@@ -142,6 +135,75 @@
             <div class="floating-meme">🔥</div>
         </div>
     </div>
+
+    <script>
+        // Aggressive audio context enablement
+        let audioContextUnlocked = false;
+        
+        function unlockAudioContext() {
+            if (!audioContextUnlocked) {
+                audioContextUnlocked = true;
+                
+                // Create and play a silent audio context to unlock audio
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    const audioContext = new AudioContext();
+                    
+                    // Create a silent buffer
+                    const buffer = audioContext.createBuffer(1, 1, 22050);
+                    const source = audioContext.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(audioContext.destination);
+                    source.start(0);
+                    
+                    console.log('🎵 Audio context unlocked!');
+                    
+                    // Resume any suspended audio context
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume().then(() => {
+                            console.log('🎵 Audio context resumed!');
+                        });
+                    }
+                } catch (e) {
+                    console.log('Audio context creation failed:', e);
+                }
+                
+                // Also try to enable video audio immediately
+                const video = document.getElementById('backgroundVideo');
+                if (video) {
+                    // Force a play with potential audio
+                    video.play().catch(e => console.log('Video play on interaction failed:', e));
+                    console.log('🎯 User interaction detected - attempting audio unlock');
+                }
+            }
+        }
+        
+        // Listen for any user interaction to unlock audio
+        ['click', 'touchstart', 'touchend', 'keydown', 'mousedown'].forEach(eventType => {
+            document.addEventListener(eventType, unlockAudioContext, { once: true });
+        });
+        
+        // Special handling for the audio button
+        document.addEventListener('DOMContentLoaded', () => {
+            const audioBtn = document.getElementById('audioToggle');
+            if (audioBtn) {
+                audioBtn.addEventListener('click', () => {
+                    unlockAudioContext();
+                    
+                    // Additional direct video manipulation
+                    const video = document.getElementById('backgroundVideo');
+                    if (video) {
+                        console.log('🎵 Audio button clicked - forcing video interaction');
+                        
+                        // Create a user-initiated play
+                        const currentTime = video.currentTime;
+                        video.currentTime = currentTime + 0.001; // Tiny time change to trigger update
+                        video.play().catch(e => console.log('Audio button video play failed:', e));
+                    }
+                });
+            }
+        });
+    </script>
 
     <!-- Load the main app script -->
     <script type="module" src="./src/js/app.js"></script>

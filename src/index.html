@@ -11,23 +11,16 @@
 <body>
     <div class="app">
         <!-- Background Video -->
-        <video class="background-video" autoplay muted loop>
+        <video class="background-video" autoplay loop muted playsinline id="backgroundVideo" preload="auto">
             <source src="assets/SaveTwitter.Net_1-vxWYYM6hFrth0-_(720p).mp4" type="video/mp4">
+            <p>Your browser doesn't support video playback.</p>
         </video>
-
-        <!-- Background Audio -->
-        <audio id="backgroundAudio1" loop>
-            <source src="assets/SaveTwitter.Net-1859786065365827584-(128kbps).mp3" type="audio/mpeg">
-        </audio>
-        <audio id="backgroundAudio2" loop>
-            <source src="assets/SaveTwitter.Net-1873924385205346307-(128kbps).mp3" type="audio/mpeg">
-        </audio>
 
         <header class="header">
             <div class="header-content">
                 <h1 class="logo">🌙 SOLANA MOON 🚀</h1>
                 <div class="header-actions">
-                    <button id="audioToggle" class="neon-btn audio-btn">🔊 SOUND ON</button>
+                    <button id="audioToggle" class="neon-btn audio-btn">🔇 SOUND OFF</button>
                     <button id="connectWallet" class="neon-btn">CONNECT WALLET</button>
                     <div id="walletInfo" class="wallet-info hidden">
                         <span id="walletAddress"></span>
@@ -121,6 +114,116 @@
             <div class="floating-meme">⚡</div>
         </div>
     </div>
+    
+    <script>
+        // Fallback: Force video interaction on any click
+        document.addEventListener('click', function ensureVideoPlays() {
+            const video = document.getElementById('backgroundVideo');
+            if (video && video.paused) {
+                video.play().catch(e => console.log('Video play failed:', e));
+            }
+        }, { once: true });
+    </script>
+    
+    <script>
+        // Enhanced fallback for audio/video interaction
+        let userHasInteracted = false;
+        
+        function enableAudioContext() {
+            if (!userHasInteracted) {
+                userHasInteracted = true;
+                const video = document.getElementById('backgroundVideo');
+                if (video) {
+                    // Force video to play on first interaction
+                    video.play().catch(e => console.log('Video play failed:', e));
+                    console.log('🎯 User interaction detected - audio context enabled');
+                }
+            }
+        }
+        
+        // Multiple interaction events to ensure audio works
+        ['click', 'touchstart', 'keydown'].forEach(eventType => {
+            document.addEventListener(eventType, enableAudioContext, { once: true });
+        });
+        
+        // Additional fallback specifically for the audio button
+        document.addEventListener('DOMContentLoaded', () => {
+            const audioBtn = document.getElementById('audioToggle');
+            if (audioBtn) {
+                audioBtn.addEventListener('click', enableAudioContext);
+            }
+        });
+    </script>
+    
+    <script>
+        // Aggressive audio context enablement
+        let audioContextUnlocked = false;
+        
+        function unlockAudioContext() {
+            if (!audioContextUnlocked) {
+                audioContextUnlocked = true;
+                
+                // Create and play a silent audio context to unlock audio
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    const audioContext = new AudioContext();
+                    
+                    // Create a silent buffer
+                    const buffer = audioContext.createBuffer(1, 1, 22050);
+                    const source = audioContext.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(audioContext.destination);
+                    source.start(0);
+                    
+                    console.log('🎵 Audio context unlocked!');
+                    
+                    // Resume any suspended audio context
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume().then(() => {
+                            console.log('🎵 Audio context resumed!');
+                        });
+                    }
+                } catch (e) {
+                    console.log('Audio context creation failed:', e);
+                }
+                
+                // Also try to enable video audio immediately
+                const video = document.getElementById('backgroundVideo');
+                if (video) {
+                    // Force a play with potential audio
+                    video.play().catch(e => console.log('Video play on interaction failed:', e));
+                    console.log('🎯 User interaction detected - attempting audio unlock');
+                }
+            }
+        }
+        
+        // Listen for any user interaction to unlock audio
+        ['click', 'touchstart', 'touchend', 'keydown', 'mousedown'].forEach(eventType => {
+            document.addEventListener(eventType, unlockAudioContext, { once: true });
+        });
+        
+        // Special handling for the audio button
+        document.addEventListener('DOMContentLoaded', () => {
+            const audioBtn = document.getElementById('audioToggle');
+            if (audioBtn) {
+                audioBtn.addEventListener('click', () => {
+                    unlockAudioContext();
+                    
+                    // Additional direct video manipulation
+                    const video = document.getElementById('backgroundVideo');
+                    if (video) {
+                        console.log('🎵 Audio button clicked - forcing video interaction');
+                        
+                        // Create a user-initiated play
+                        const currentTime = video.currentTime;
+                        video.currentTime = currentTime + 0.001; // Tiny time change to trigger update
+                        video.play().catch(e => console.log('Audio button video play failed:', e));
+                    }
+                });
+            }
+        });
+    </script>
+    
     <script src="js/app.js"></script>
     <script src="js/wallet.js"></script>
 </body>

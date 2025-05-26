@@ -14,14 +14,12 @@ class SolanaMoonDashboard {
         this.marketCapHistory = [];
         this.athData = null;
         this.atlData = null;
-        this.audioEnabled = true;
-        this.currentAudioIndex = 0;
-        this.audioTracks = [];
+        this.backgroundVideo = null;
         this.init();
     }
 
     async init() {
-        await this.setupMedia();
+        this.setupBackgroundVideo();
         this.setupEventListeners();
         this.addMissingStyles();
         this.setupCharts();
@@ -29,7 +27,48 @@ class SolanaMoonDashboard {
         await this.loadMemecoinData();
         this.startDataRefresh();
         this.showMemeMessages();
-        this.enableAudio();
+    }
+
+    setupBackgroundVideo() {
+        // Wait for DOM to be fully loaded
+        const video = document.getElementById('backgroundVideo');
+        if (video) {
+            this.backgroundVideo = video;
+            console.log('✅ Background video element found and assigned');
+            
+            // Set initial properties
+            this.backgroundVideo.muted = true;
+            this.backgroundVideo.volume = 1.0; // Maximum volume when unmuted
+            
+            // Add event listeners for debugging
+            this.backgroundVideo.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded and ready!');
+                console.log(`Video properties: duration=${this.backgroundVideo.duration}, muted=${this.backgroundVideo.muted}, volume=${this.backgroundVideo.volume}`);
+            });
+            
+            this.backgroundVideo.addEventListener('canplay', () => {
+                console.log('🎥 Video can start playing');
+            });
+            
+            this.backgroundVideo.addEventListener('play', () => {
+                console.log('▶️ Video started playing');
+            });
+            
+            this.backgroundVideo.addEventListener('volumechange', () => {
+                console.log(`🔊 Volume changed: muted=${this.backgroundVideo.muted}, volume=${this.backgroundVideo.volume}`);
+            });
+            
+            this.backgroundVideo.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+            
+            // Force video to play if it's not already playing
+            this.backgroundVideo.play().catch(e => {
+                console.log('Video autoplay prevented by browser, will play on user interaction');
+            });
+        } else {
+            console.error('❌ Background video element not found!');
+        }
     }
 
     addMissingStyles() {
@@ -150,41 +189,6 @@ class SolanaMoonDashboard {
                 console.error('Video loading error:', e);
             });
         }
-
-        // Setup audio tracks with MAXIMUM volume + gain
-        this.audioTracks = [
-            document.getElementById('backgroundAudio1'),
-            document.getElementById('backgroundAudio2')
-        ];
-
-        // Wait for audio to load with maximum volume
-        await Promise.all(this.audioTracks.map(audio => {
-            return new Promise((resolve) => {
-                if (audio) {
-                    audio.volume = 1.0; // Maximum volume (100%)
-                    // Try to boost audio further with gain if supported
-                    if (window.AudioContext || window.webkitAudioContext) {
-                        try {
-                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            const source = audioContext.createMediaElementSource(audio);
-                            const gainNode = audioContext.createGain();
-                            gainNode.gain.value = 2.0; // Double the gain!
-                            source.connect(gainNode);
-                            gainNode.connect(audioContext.destination);
-                        } catch (e) {
-                            console.log('Audio gain boost not supported:', e);
-                        }
-                    }
-                    audio.addEventListener('canplaythrough', resolve, { once: true });
-                    audio.addEventListener('ended', () => this.playNextTrack());
-                    audio.load();
-                } else {
-                    resolve();
-                }
-            });
-        }));
-
-        console.log('🎵 Audio tracks loaded at MAXIMUM volume with BOOST!');
     }
 
     setupEventListeners() {
@@ -192,7 +196,16 @@ class SolanaMoonDashboard {
         connectBtn.addEventListener('click', () => this.connectWallet());
 
         const audioBtn = document.getElementById('audioToggle');
-        audioBtn.addEventListener('click', () => this.toggleAudio());
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleVideoAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔇 SOUND OFF';
+            audioBtn.classList.add('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
 
         // Download button for Blackpaper - Fetch-based approach
         const downloadBtn = document.getElementById('downloadBlackpaper');
@@ -214,10 +227,6 @@ class SolanaMoonDashboard {
             this.createDownloadButtonFallback();
         }
 
-        // Set initial audio button state
-        audioBtn.textContent = '🔊 SOUND ON';
-        audioBtn.classList.remove('muted');
-
         // Memecoin filter buttons
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -227,16 +236,271 @@ class SolanaMoonDashboard {
                 this.renderMemecoinTable();
             });
         });
+    }
 
-        // Force audio to start on any user interaction (browser requirement fallback)
-        document.addEventListener('click', () => {
-            if (this.audioEnabled && this.audioTracks[this.currentAudioIndex]) {
-                const currentAudio = this.audioTracks[this.currentAudioIndex];
-                if (currentAudio.paused) {
-                    this.playCurrentTrack();
-                }
+    toggleVideoAudio() {
+        const audioBtn = document.getElementById('audioToggle');
+        
+        if (!this.backgroundVideo) {
+            console.error('❌ Background video not found - reinitializing...');
+            this.setupBackgroundVideo();
+            if (!this.backgroundVideo) {
+                alert('⚠️ Video not loaded yet. Please try again in a moment.');
+                return;
             }
-        }, { once: true });
+        }
+        
+        console.log(`🎵 Current video state: muted=${this.backgroundVideo.muted}, paused=${this.backgroundVideo.paused}, volume=${this.backgroundVideo.volume}`);
+        
+        if (this.backgroundVideo.muted) {
+            // Create a completely new approach to enable audio
+            this.enableVideoAudioWithUserGesture(audioBtn);
+        } else {
+            // Mute the video
+            this.backgroundVideo.muted = true;
+            audioBtn.textContent = '🔇 SOUND OFF';
+            audioBtn.classList.add('muted');
+            console.log('🔇 Video audio disabled');
+        }
+    }
+
+    enableVideoAudioWithUserGesture(audioBtn) {
+        try {
+            // Method 1: Direct approach
+            console.log('🎵 Attempting direct video unmute...');
+            
+            // Save current time to maintain playback position
+            const currentTime = this.backgroundVideo.currentTime;
+            
+            // Unmute and set volume
+            this.backgroundVideo.muted = false;
+            this.backgroundVideo.volume = 1.0;
+            
+            // Force a new play command with user gesture
+            this.backgroundVideo.currentTime = currentTime;
+            
+            const playPromise = this.backgroundVideo.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: Video is now playing with audio!');
+                    audioBtn.textContent = '🔊 SOUND ON';
+                    audioBtn.classList.remove('muted');
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                    // Verify audio is actually playing
+                    setTimeout(() => {
+                        console.log(`🔊 Audio verification: muted=${this.backgroundVideo.muted}, volume=${this.backgroundVideo.volume}`);
+                        if (!this.backgroundVideo.muted && this.backgroundVideo.volume > 0) {
+                            console.log('✅ Audio is successfully enabled!');
+                        } else {
+                            console.warn('⚠️ Audio may still be blocked');
+                            this.tryAlternativeAudioMethod(audioBtn);
+                        }
+                    }, 1000);
+                    
+                }).catch(error => {
+                    console.error('🎵 Play failed, trying alternative method:', error);
+                    this.tryAlternativeAudioMethod(audioBtn);
+                });
+            } else {
+                // Fallback for browsers that don't return a promise
+                setTimeout(() => {
+                    if (!this.backgroundVideo.muted && this.backgroundVideo.volume > 0) {
+                        console.log('🎵 Audio enabled via fallback method');
+                        audioBtn.textContent = '🔊 SOUND ON';
+                        audioBtn.classList.remove('muted');
+                        this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    } else {
+                        this.tryAlternativeAudioMethod(audioBtn);
+                    }
+                }, 500);
+            }
+            
+        } catch (error) {
+            console.error('🎵 Direct method failed:', error);
+            this.tryAlternativeAudioMethod(audioBtn);
+        }
+    }
+
+    tryAlternativeAudioMethod(audioBtn) {
+        console.log('🔄 Trying alternative audio enablement...');
+        
+        try {
+            // Method 2: Reload and replay approach
+            const videoSrc = this.backgroundVideo.src;
+            const currentTime = this.backgroundVideo.currentTime;
+            
+            // Create a new video element temporarily
+            const tempVideo = document.createElement('video');
+            tempVideo.src = videoSrc;
+            tempVideo.muted = false;
+            tempVideo.volume = 1.0;
+            tempVideo.loop = true;
+            tempVideo.autoplay = true;
+            tempVideo.currentTime = currentTime;
+            
+            // Try to play the temp video
+            tempVideo.play().then(() => {
+                console.log('🎵 Temp video playing with audio, applying to main video...');
+                
+                // Apply settings to main video
+                this.backgroundVideo.muted = false;
+                this.backgroundVideo.volume = 1.0;
+                this.backgroundVideo.currentTime = currentTime;
+                
+                audioBtn.textContent = '🔊 SOUND ON';
+                audioBtn.classList.remove('muted');
+                this.showSuccessMessage('🎵 SOUND ON! AUDIO UNLOCKED! 🚀');
+                
+                // Remove temp video
+                tempVideo.remove();
+                
+            }).catch(e => {
+                console.log('🎵 Temp video method failed, trying reload...');
+                tempVideo.remove();
+                this.tryVideoReloadMethod(audioBtn, currentTime);
+            });
+            
+        } catch (error) {
+            console.error('🎵 Alternative method failed:', error);
+            this.tryVideoReloadMethod(audioBtn, this.backgroundVideo.currentTime);
+        }
+    }
+
+    tryVideoReloadMethod(audioBtn, currentTime) {
+        console.log('🔄 Trying video reload method...');
+        
+        try {
+            // Method 3: Complete reload with audio enabled
+            const videoSrc = this.backgroundVideo.src;
+            
+            // Store video properties
+            const wasPlaying = !this.backgroundVideo.paused;
+            
+            // Reload video with audio
+            this.backgroundVideo.load();
+            this.backgroundVideo.muted = false;
+            this.backgroundVideo.volume = 1.0;
+            
+            this.backgroundVideo.addEventListener('loadeddata', () => {
+                console.log('🎵 Video reloaded, setting time and playing...');
+                this.backgroundVideo.currentTime = currentTime;
+                
+                if (wasPlaying) {
+                    this.backgroundVideo.play().then(() => {
+                        console.log('🎵 Video successfully reloaded with audio!');
+                        audioBtn.textContent = '🔊 SOUND ON';
+                        audioBtn.classList.remove('muted');
+                        this.showSuccessMessage('🎵 SOUND ON! AUDIO RELOADED! 🚀');
+                    }).catch(e => {
+                        console.error('🎵 Reload play failed:', e);
+                        this.showAudioTroubleshootingMessage();
+                        // Still update UI
+                        audioBtn.textContent = '🔊 SOUND ON';
+                        audioBtn.classList.remove('muted');
+                    });
+                }
+            }, { once: true });
+            
+        } catch (error) {
+            console.error('🎵 Reload method failed:', error);
+            this.showAudioTroubleshootingMessage();
+            // Still update UI to show attempt
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+        }
+    }
+
+    showAudioTroubleshootingMessage() {
+        const troubleshootDiv = document.createElement('div');
+        troubleshootDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #ff00ff;
+            padding: 2rem;
+            border-radius: 15px;
+            font-family: Orbitron;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 2000;
+            border: 2px solid #ff00ff;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+        `;
+        
+        troubleshootDiv.innerHTML = `
+            <h3 style="color: #ff00ff; margin-bottom: 1rem;">🔊 AUDIO TROUBLESHOOTING</h3>
+            <p style="margin-bottom: 1rem;">If you can't hear the video audio, try these steps:</p>
+            
+            <div style="text-align: left; margin: 1rem 0; background: rgba(255, 0, 255, 0.1); padding: 1rem; border-radius: 10px;">
+                <strong>🔧 Troubleshooting Steps:</strong><br><br>
+                
+                <strong>1. Check Browser:</strong><br>
+                • Right-click on the page → "Unmute site"<br>
+                • Check if sound icon shows "muted" in browser tab<br><br>
+                
+                <strong>2. Video File:</strong><br>
+                • The video file might not have audio<br>
+                • Try refreshing the page<br><br>
+                
+                <strong>3. Browser Settings:</strong><br>
+                • Enable autoplay in browser settings<br>
+                • Allow sound for this website<br><br>
+                
+                <strong>4. System Volume:</strong><br>
+                • Check your system/browser volume is not muted
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                <button id="retryAudio" style="
+                    background: #ff00ff;
+                    color: #000;
+                    border: none;
+                    padding: 0.8rem 1.5rem;
+                    border-radius: 25px;
+                    font-family: Orbitron;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">🔄 RETRY AUDIO</button>
+                
+                <button id="closeTroubleshooting" style="
+                    background: #ffeb3b;
+                    color: #000;
+                    border: none;
+                    padding: 0.8rem 1.5rem;
+                    border-radius: 25px;
+                    font-family: Orbitron;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">UNDERSTOOD 🚀</button>
+            </div>
+        `;
+        
+        document.body.appendChild(troubleshootDiv);
+        
+        // Add click handlers
+        document.getElementById('retryAudio').addEventListener('click', () => {
+            document.body.removeChild(troubleshootDiv);
+            this.toggleVideoAudio(); // Try again
+        });
+        
+        document.getElementById('closeTroubleshooting').addEventListener('click', () => {
+            document.body.removeChild(troubleshootDiv);
+        });
+        
+        // Auto-remove after 15 seconds
+        setTimeout(() => {
+            if (document.body.contains(troubleshootDiv)) {
+                document.body.removeChild(troubleshootDiv);
+            }
+        }, 15000);
     }
 
     createDownloadButtonFallback() {
@@ -1337,7 +1601,7 @@ class SolanaMoonDashboard {
             '💎 DIAMOND HANDS ACTIVATED! 💎',
             '⚡ LIGHTNING FAST TRANSACTIONS! ⚡',
             '🔥 THIS IS THE WAY! 🔥',
-            '🎵 VIBING TO THE BEAT! 🎵'
+            '🎵 VIBING TO THE VIDEO! 🎵'
         ];
 
         let messageIndex = 0;
@@ -1345,63 +1609,6 @@ class SolanaMoonDashboard {
             console.log(messages[messageIndex]);
             messageIndex = (messageIndex + 1) % messages.length;
         }, 5000);
-    }
-
-    toggleAudio() {
-        const audioBtn = document.getElementById('audioToggle');
-        
-        if (this.audioEnabled) {
-            this.disableAudio();
-            audioBtn.textContent = '🔇 SOUND OFF';
-            audioBtn.classList.add('muted');
-        } else {
-            this.enableAudio();
-            audioBtn.textContent = '🔊 SOUND ON';
-            audioBtn.classList.remove('muted');
-        }
-    }
-
-    enableAudio() {
-        this.audioEnabled = true;
-        // Try to play immediately
-        setTimeout(() => {
-            this.playCurrentTrack();
-        }, 100); // Very short delay to ensure setup is complete
-        console.log('🚀 AUDIO TO THE MOON AT MAXIMUM VOLUME! 🎵');
-    }
-
-    disableAudio() {
-        this.audioEnabled = false;
-        this.audioTracks.forEach(audio => {
-            if (audio) {
-                audio.pause();
-                audio.currentTime = 0;
-            }
-        });
-    }
-
-    playCurrentTrack() {
-        if (!this.audioEnabled || !this.audioTracks[this.currentAudioIndex]) return;
-
-        const currentAudio = this.audioTracks[this.currentAudioIndex];
-        // MAXIMUM volume enforcement
-        currentAudio.volume = 1.0;
-        
-        currentAudio.play().then(() => {
-            console.log(`🎵 Playing track ${this.currentAudioIndex + 1} at MAXIMUM VOLUME WITH BOOST!`);
-        }).catch(error => {
-            console.log('Audio play failed, will retry on user interaction:', error);
-        });
-    }
-
-    playNextTrack() {
-        if (!this.audioEnabled) return;
-
-        this.currentAudioIndex = (this.currentAudioIndex + 1) % this.audioTracks.length;
-        console.log(`🎵 Switching to track ${this.currentAudioIndex + 1}`);
-        setTimeout(() => {
-            this.playCurrentTrack();
-        }, 500); // Shorter gap between tracks
     }
 
     showSuccessMessage(message) {
