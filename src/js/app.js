@@ -15,11 +15,14 @@ class SolanaMoonDashboard {
         this.athData = null;
         this.atlData = null;
         this.backgroundVideo = null;
+        this.backgroundAudio = null;
+        this.audioEnabled = true; // Auto-enable audio
         this.init();
     }
 
     async init() {
         this.setupBackgroundVideo();
+        this.setupBackgroundAudio();
         this.setupEventListeners();
         this.addMissingStyles();
         this.setupCharts();
@@ -30,44 +33,95 @@ class SolanaMoonDashboard {
     }
 
     setupBackgroundVideo() {
-        // Wait for DOM to be fully loaded
+        // Setup video (ALWAYS MUTED)
         const video = document.getElementById('backgroundVideo');
         if (video) {
             this.backgroundVideo = video;
             console.log('✅ Background video element found and assigned');
             
-            // Set initial properties
+            // Force video to be muted permanently
             this.backgroundVideo.muted = true;
-            this.backgroundVideo.volume = 1.0; // Maximum volume when unmuted
+            this.backgroundVideo.volume = 0;
             
-            // Add event listeners for debugging
             this.backgroundVideo.addEventListener('loadeddata', () => {
-                console.log('🎬 Background video loaded and ready!');
-                console.log(`Video properties: duration=${this.backgroundVideo.duration}, muted=${this.backgroundVideo.muted}, volume=${this.backgroundVideo.volume}`);
-            });
-            
-            this.backgroundVideo.addEventListener('canplay', () => {
-                console.log('🎥 Video can start playing');
-            });
-            
-            this.backgroundVideo.addEventListener('play', () => {
-                console.log('▶️ Video started playing');
-            });
-            
-            this.backgroundVideo.addEventListener('volumechange', () => {
-                console.log(`🔊 Volume changed: muted=${this.backgroundVideo.muted}, volume=${this.backgroundVideo.volume}`);
+                console.log('🎬 Background video loaded (muted)');
             });
             
             this.backgroundVideo.addEventListener('error', (e) => {
                 console.error('Video loading error:', e);
             });
             
-            // Force video to play if it's not already playing
+            // Auto-play muted video
             this.backgroundVideo.play().catch(e => {
-                console.log('Video autoplay prevented by browser, will play on user interaction');
+                console.log('Video autoplay prevented by browser');
             });
         } else {
             console.error('❌ Background video element not found!');
+        }
+    }
+
+    setupBackgroundAudio() {
+        // Setup MP3 audio (SEPARATE FROM VIDEO)
+        const audio = document.getElementById('backgroundAudio');
+        if (audio) {
+            this.backgroundAudio = audio;
+            console.log('✅ Background audio element found and assigned');
+            
+            // Set initial audio properties
+            this.backgroundAudio.volume = 1.0;
+            this.backgroundAudio.loop = true;
+            
+            this.backgroundAudio.addEventListener('loadeddata', () => {
+                console.log('🎵 Background MP3 audio loaded and ready!');
+            });
+            
+            this.backgroundAudio.addEventListener('canplay', () => {
+                console.log('🎵 MP3 audio can start playing');
+                // Try to auto-play (will be handled by user interaction)
+                this.tryAutoPlayAudio();
+            });
+            
+            this.backgroundAudio.addEventListener('play', () => {
+                console.log('🎵 MP3 audio started playing');
+                this.updateAudioButtonState(true);
+            });
+            
+            this.backgroundAudio.addEventListener('pause', () => {
+                console.log('🔇 MP3 audio paused');
+                this.updateAudioButtonState(false);
+            });
+            
+            this.backgroundAudio.addEventListener('error', (e) => {
+                console.error('Audio loading error:', e);
+            });
+            
+        } else {
+            console.error('❌ Background audio element not found!');
+        }
+    }
+
+    tryAutoPlayAudio() {
+        if (this.backgroundAudio && this.audioEnabled) {
+            this.backgroundAudio.play().then(() => {
+                console.log('🎵 MP3 auto-play successful!');
+                this.updateAudioButtonState(true);
+            }).catch(e => {
+                console.log('🎵 MP3 auto-play prevented by browser, waiting for user interaction');
+                this.updateAudioButtonState(false);
+            });
+        }
+    }
+
+    updateAudioButtonState(isPlaying) {
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            if (isPlaying) {
+                audioBtn.textContent = '🔊 SOUND ON';
+                audioBtn.classList.remove('muted');
+            } else {
+                audioBtn.textContent = '🔇 SOUND OFF';
+                audioBtn.classList.add('muted');
+            }
         }
     }
 
@@ -197,31 +251,24 @@ class SolanaMoonDashboard {
 
         const audioBtn = document.getElementById('audioToggle');
         if (audioBtn) {
-            audioBtn.addEventListener('click', () => this.toggleVideoAudio());
+            audioBtn.addEventListener('click', () => this.toggleAudio());
             
             // Set initial button state
-            audioBtn.textContent = '🔇 SOUND OFF';
-            audioBtn.classList.add('muted');
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
             console.log('✅ Audio button initialized');
         } else {
             console.error('❌ Audio toggle button not found!');
         }
 
-        // Download button for Blackpaper - Fetch-based approach
+        // Download button for Blackpaper
         const downloadBtn = document.getElementById('downloadBlackpaper');
-        console.log('🔍 Download button element:', downloadBtn);
-        
         if (downloadBtn) {
-            console.log('✅ Download button found! Setting up event listener...');
-            
-            // Replace the default href behavior with fetch download
             downloadBtn.addEventListener('click', (e) => {
-                e.preventDefault(); // Prevent default anchor behavior
+                e.preventDefault();
                 console.log('📄 Download button clicked!');
                 this.downloadBlackpaperViaFetch();
             });
-            
-            console.log('🚀 Download button fully initialized!');
         } else {
             console.error('❌ Download button not found! Creating fallback...');
             this.createDownloadButtonFallback();
@@ -238,177 +285,2188 @@ class SolanaMoonDashboard {
         });
     }
 
-    toggleVideoAudio() {
-        const audioBtn = document.getElementById('audioToggle');
-        
-        if (!this.backgroundVideo) {
-            console.error('❌ Background video not found - reinitializing...');
-            this.setupBackgroundVideo();
-            if (!this.backgroundVideo) {
-                alert('⚠️ Video not loaded yet. Please try again in a moment.');
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
                 return;
             }
         }
         
-        console.log(`🎵 Current video state: muted=${this.backgroundVideo.muted}, paused=${this.backgroundVideo.paused}, volume=${this.backgroundVideo.volume}`);
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
         
-        if (this.backgroundVideo.muted) {
-            // Create a completely new approach to enable audio
-            this.enableVideoAudioWithUserGesture(audioBtn);
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
         } else {
-            // Mute the video
-            this.backgroundVideo.muted = true;
-            audioBtn.textContent = '🔇 SOUND OFF';
-            audioBtn.classList.add('muted');
-            console.log('🔇 Video audio disabled');
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
         }
     }
 
-    enableVideoAudioWithUserGesture(audioBtn) {
+    enableAudio() {
         try {
-            // Method 1: Direct approach
-            console.log('🎵 Attempting direct video unmute...');
+            console.log('🎵 Attempting to enable MP3 audio...');
             
-            // Save current time to maintain playback position
-            const currentTime = this.backgroundVideo.currentTime;
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
             
-            // Unmute and set volume
-            this.backgroundVideo.muted = false;
-            this.backgroundVideo.volume = 1.0;
-            
-            // Force a new play command with user gesture
-            this.backgroundVideo.currentTime = currentTime;
-            
-            const playPromise = this.backgroundVideo.play();
+            const playPromise = this.backgroundAudio.play();
             
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    console.log('🎵 SUCCESS: Video is now playing with audio!');
-                    audioBtn.textContent = '🔊 SOUND ON';
-                    audioBtn.classList.remove('muted');
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
                     this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
                     
-                    // Verify audio is actually playing
-                    setTimeout(() => {
-                        console.log(`🔊 Audio verification: muted=${this.backgroundVideo.muted}, volume=${this.backgroundVideo.volume}`);
-                        if (!this.backgroundVideo.muted && this.backgroundVideo.volume > 0) {
-                            console.log('✅ Audio is successfully enabled!');
-                        } else {
-                            console.warn('⚠️ Audio may still be blocked');
-                            this.tryAlternativeAudioMethod(audioBtn);
-                        }
-                    }, 1000);
-                    
                 }).catch(error => {
-                    console.error('🎵 Play failed, trying alternative method:', error);
-                    this.tryAlternativeAudioMethod(audioBtn);
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
                 });
-            } else {
-                // Fallback for browsers that don't return a promise
-                setTimeout(() => {
-                    if (!this.backgroundVideo.muted && this.backgroundVideo.volume > 0) {
-                        console.log('🎵 Audio enabled via fallback method');
-                        audioBtn.textContent = '🔊 SOUND ON';
-                        audioBtn.classList.remove('muted');
-                        this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
-                    } else {
-                        this.tryAlternativeAudioMethod(audioBtn);
-                    }
-                }, 500);
             }
             
         } catch (error) {
-            console.error('🎵 Direct method failed:', error);
-            this.tryAlternativeAudioMethod(audioBtn);
-        }
-    }
-
-    tryAlternativeAudioMethod(audioBtn) {
-        console.log('🔄 Trying alternative audio enablement...');
-        
-        try {
-            // Method 2: Reload and replay approach
-            const videoSrc = this.backgroundVideo.src;
-            const currentTime = this.backgroundVideo.currentTime;
-            
-            // Create a new video element temporarily
-            const tempVideo = document.createElement('video');
-            tempVideo.src = videoSrc;
-            tempVideo.muted = false;
-            tempVideo.volume = 1.0;
-            tempVideo.loop = true;
-            tempVideo.autoplay = true;
-            tempVideo.currentTime = currentTime;
-            
-            // Try to play the temp video
-            tempVideo.play().then(() => {
-                console.log('🎵 Temp video playing with audio, applying to main video...');
-                
-                // Apply settings to main video
-                this.backgroundVideo.muted = false;
-                this.backgroundVideo.volume = 1.0;
-                this.backgroundVideo.currentTime = currentTime;
-                
-                audioBtn.textContent = '🔊 SOUND ON';
-                audioBtn.classList.remove('muted');
-                this.showSuccessMessage('🎵 SOUND ON! AUDIO UNLOCKED! 🚀');
-                
-                // Remove temp video
-                tempVideo.remove();
-                
-            }).catch(e => {
-                console.log('🎵 Temp video method failed, trying reload...');
-                tempVideo.remove();
-                this.tryVideoReloadMethod(audioBtn, currentTime);
-            });
-            
-        } catch (error) {
-            console.error('🎵 Alternative method failed:', error);
-            this.tryVideoReloadMethod(audioBtn, this.backgroundVideo.currentTime);
-        }
-    }
-
-    tryVideoReloadMethod(audioBtn, currentTime) {
-        console.log('🔄 Trying video reload method...');
-        
-        try {
-            // Method 3: Complete reload with audio enabled
-            const videoSrc = this.backgroundVideo.src;
-            
-            // Store video properties
-            const wasPlaying = !this.backgroundVideo.paused;
-            
-            // Reload video with audio
-            this.backgroundVideo.load();
-            this.backgroundVideo.muted = false;
-            this.backgroundVideo.volume = 1.0;
-            
-            this.backgroundVideo.addEventListener('loadeddata', () => {
-                console.log('🎵 Video reloaded, setting time and playing...');
-                this.backgroundVideo.currentTime = currentTime;
-                
-                if (wasPlaying) {
-                    this.backgroundVideo.play().then(() => {
-                        console.log('🎵 Video successfully reloaded with audio!');
-                        audioBtn.textContent = '🔊 SOUND ON';
-                        audioBtn.classList.remove('muted');
-                        this.showSuccessMessage('🎵 SOUND ON! AUDIO RELOADED! 🚀');
-                    }).catch(e => {
-                        console.error('🎵 Reload play failed:', e);
-                        this.showAudioTroubleshootingMessage();
-                        // Still update UI
-                        audioBtn.textContent = '🔊 SOUND ON';
-                        audioBtn.classList.remove('muted');
-                    });
-                }
-            }, { once: true });
-            
-        } catch (error) {
-            console.error('🎵 Reload method failed:', error);
+            console.error('🎵 Enable audio failed:', error);
             this.showAudioTroubleshootingMessage();
-            // Still update UI to show attempt
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
             audioBtn.textContent = '🔊 SOUND ON';
             audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    addMissingStyles() {
+        // Add missing styles for enhanced Solana info display
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor; }
+                50% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+            
+            .solana-details {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #00ff88;
+                border-radius: 10px;
+                padding: 2rem;
+                margin: 2rem 0;
+                backdrop-filter: blur(10px);
+            }
+            
+            .solana-details h3 {
+                color: #00ff88;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-size: 1.5rem;
+                text-shadow: 0 0 15px #00ff88;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .solana-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .info-item {
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid #00ff88;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .info-label {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .info-value {
+                color: #00ff88;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            
+            .ath-atl-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .ath-card, .atl-card {
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid;
+                border-radius: 10px;
+                padding: 1rem;
+                text-align: center;
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            
+            .ath-card {
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+            
+            .atl-card {
+                border-color: #ff4444;
+                color: #ff4444;
+            }
+            
+            .ath-price, .atl-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                margin: 0.5rem 0;
+            }
+            
+            .ath-date, .atl-date {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
+            
+            .loading {
+                color: #00ff88;
+                text-align: center;
+                padding: 2rem;
+                animation: glow 1s ease-in-out infinite alternate;
+            }
+            
+            .error {
+                color: #ff4444;
+                text-align: center;
+                padding: 2rem;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async setupMedia() {
+        // Setup background video
+        const video = document.querySelector('.background-video');
+        if (video) {
+            video.addEventListener('loadeddata', () => {
+                console.log('🎬 Background video loaded!');
+            });
+            video.addEventListener('error', (e) => {
+                console.error('Video loading error:', e);
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.addEventListener('click', () => this.connectWallet());
+
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.toggleAudio());
+            
+            // Set initial button state
+            audioBtn.textContent = '🔊 SOUND ON';
+            audioBtn.classList.remove('muted');
+            console.log('✅ Audio button initialized');
+        } else {
+            console.error('❌ Audio toggle button not found!');
+        }
+
+        // Download button for Blackpaper
+        const downloadBtn = document.getElementById('downloadBlackpaper');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
+        } else {
+            console.error('❌ Download button not found! Creating fallback...');
+            this.createDownloadButtonFallback();
+        }
+
+        // Memecoin filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderMemecoinTable();
+            });
+        });
+    }
+
+    toggleAudio() {
+        if (!this.backgroundAudio) {
+            console.error('❌ Background audio not found - reinitializing...');
+            this.setupBackgroundAudio();
+            if (!this.backgroundAudio) {
+                alert('⚠️ Audio not loaded yet. Please try again in a moment.');
+                return;
+            }
+        }
+        
+        console.log(`🎵 Current audio state: paused=${this.backgroundAudio.paused}, volume=${this.backgroundAudio.volume}`);
+        
+        if (this.backgroundAudio.paused) {
+            // Play audio
+            this.enableAudio();
+        } else {
+            // Pause audio
+            this.backgroundAudio.pause();
+            this.audioEnabled = false;
+            this.updateAudioButtonState(false);
+            console.log('🔇 Audio paused');
+        }
+    }
+
+    enableAudio() {
+        try {
+            console.log('🎵 Attempting to enable MP3 audio...');
+            
+            // Set volume and play
+            this.backgroundAudio.volume = 1.0;
+            this.audioEnabled = true;
+            
+            const playPromise = this.backgroundAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🎵 SUCCESS: MP3 audio is now playing!');
+                    this.updateAudioButtonState(true);
+                    this.showSuccessMessage('🎵 SOUND ON! VIBING TO THE MOON! 🚀');
+                    
+                }).catch(error => {
+                    console.error('🎵 MP3 play failed:', error);
+                    this.showAudioTroubleshootingMessage();
+                });
+            }
+            
+        } catch (error) {
+            console.error('🎵 Enable audio failed:', error);
+            this.showAudioTroubleshootingMessage();
+        }
+    }
+
+    updateAudioButtonState(isPlaying) {
+        const audioBtn = document.getElementById('audioToggle');
+        if (audioBtn) {
+            if (isPlaying) {
+                audioBtn.textContent = '🔊 SOUND ON';
+                audioBtn.classList.remove('muted');
+            } else {
+                audioBtn.textContent = '🔇 SOUND OFF';
+                audioBtn.classList.add('muted');
+            }
         }
     }
 
@@ -435,7 +2493,7 @@ class SolanaMoonDashboard {
         
         troubleshootDiv.innerHTML = `
             <h3 style="color: #ff00ff; margin-bottom: 1rem;">🔊 AUDIO TROUBLESHOOTING</h3>
-            <p style="margin-bottom: 1rem;">If you can't hear the video audio, try these steps:</p>
+            <p style="margin-bottom: 1rem;">If you can't hear the background music, try these steps:</p>
             
             <div style="text-align: left; margin: 1rem 0; background: rgba(255, 0, 255, 0.1); padding: 1rem; border-radius: 10px;">
                 <strong>🔧 Troubleshooting Steps:</strong><br><br>
@@ -444,8 +2502,8 @@ class SolanaMoonDashboard {
                 • Right-click on the page → "Unmute site"<br>
                 • Check if sound icon shows "muted" in browser tab<br><br>
                 
-                <strong>2. Video File:</strong><br>
-                • The video file might not have audio<br>
+                <strong>2. Audio File:</strong><br>
+                • Make sure the MP3 file exists and is accessible<br>
                 • Try refreshing the page<br><br>
                 
                 <strong>3. Browser Settings:</strong><br>
@@ -488,7 +2546,7 @@ class SolanaMoonDashboard {
         // Add click handlers
         document.getElementById('retryAudio').addEventListener('click', () => {
             document.body.removeChild(troubleshootDiv);
-            this.toggleVideoAudio(); // Try again
+            this.toggleAudio(); // Try again
         });
         
         document.getElementById('closeTroubleshooting').addEventListener('click', () => {
