@@ -269,81 +269,10 @@ class SolanaMoonDashboard {
         console.log('🚀 Starting blackpaper download process...');
         
         try {
-            // First, try to create a blob with some sample content
-            const pdfContent = `%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
 
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
-/Resources <<
-/Font <<
-/F1 5 0 R
->>
->>
->>
-endobj
-
-4 0 obj
-<<
-/Length 53
->>
-stream
-BT
-/F1 24 Tf
-100 700 Td
-(SOLANA MOON BLACKPAPER) Tj
-ET
-endstream
-endobj
-
-5 0 obj
-<<
-/Type /Font
-/Subtype /Type1
-/BaseFont /Helvetica
->>
-endobj
-
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000274 00000 n 
-0000000379 00000 n 
-trailer
-<<
-/Size 6
-/Root 1 0 R
->>
-startxref
-456
-%%EOF`;
-
-            // Create blob and download
-            const blob = new Blob([pdfContent], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            
+            // Direct download of the actual Blackpaper.pdf file
             const link = document.createElement('a');
-            link.href = url;
+            link.href = './src/assets/Blackpaper.pdf';
             link.download = 'Solana_Moon_Blackpaper.pdf';
             link.style.display = 'none';
             
@@ -352,65 +281,63 @@ startxref
             link.click();
             document.body.removeChild(link);
             
-            // Clean up
-            window.URL.revokeObjectURL(url);
-            
             // Show success message
             this.showSuccessMessage('🚀 BLACKPAPER DOWNLOADED! READ THE SACRED TEXTS! 📄');
             
-            console.log('✅ Blackpaper download completed successfully!');
+            console.log('✅ Blackpaper.pdf download completed successfully!');
             
-        } catch (blobError) {
-            console.error('Blob download failed, trying alternative method:', blobError);
+        } catch (directError) {
+            console.error('Direct download failed:', directError);
             
-            // Fallback: Try direct file download
-            try {
-                const link = document.createElement('a');
-                link.href = './src/assets/Blackpaper.pdf';
-                link.download = 'Solana_Moon_Blackpaper.pdf';
-                link.style.display = 'none';
-                
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                this.showSuccessMessage('📄 BLACKPAPER DOWNLOAD INITIATED! 🚀');
-                console.log('📄 Alternative download method used!');
-                
-            } catch (directError) {
-                console.error('Direct download failed, opening in new tab:', directError);
-                
-                // Final fallback: open in new tab
+            // Fallback 1: Try with different path variations
+            const alternatePaths = [
+                'src/assets/Blackpaper.pdf',
+                './assets/Blackpaper.pdf',
+                '../assets/Blackpaper.pdf',
+                '/src/assets/Blackpaper.pdf'
+            ];
+            
+            let downloadAttempted = false;
+            
+            for (const path of alternatePaths) {
                 try {
-                    const newWindow = window.open('', '_blank');
-                    newWindow.document.write(`
-                        <html>
-                        <head><title>Solana Moon Blackpaper</title></head>
-                        <body style="font-family: Arial, sans-serif; padding: 2rem; background: #0a0a0a; color: #00ff88;">
-                            <h1>🚀 SOLANA MOON BLACKPAPER 🌙</h1>
-                            <h2>💎 DIAMOND HANDS WHITEPAPER 💎</h2>
-                            <p>Welcome to the future of DeFi on Solana!</p>
-                            <p>This is a placeholder document. The full blackpaper will be available soon.</p>
-                            <h3>Key Features:</h3>
-                            <ul>
-                                <li>🚀 Lightning-fast transactions on Solana</li>
-                                <li>💎 Community-driven meme token ecosystem</li>
-                                <li>🌙 To the moon technology</li>
-                                <li>⚡ Ultra-low fees</li>
-                                <li>🔥 Maximum yield farming opportunities</li>
-                            </ul>
-                            <p style="margin-top: 2rem; font-weight: bold;">Stay tuned for more updates!</p>
-                        </body>
-                        </html>
-                    `);
-                    newWindow.document.close();
+                    const link = document.createElement('a');
+                    link.href = path;
+                    link.download = 'Solana_Moon_Blackpaper.pdf';
+                    link.style.display = 'none';
                     
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    console.log(`📄 Alternative download attempted with path: ${path}`);
+                    downloadAttempted = true;
+                    break;
+                } catch (error) {
+                    console.log(`Failed with path ${path}:`, error);
+                    continue;
+                }
+            }
+            
+            if (downloadAttempted) {
+                this.showSuccessMessage('📄 BLACKPAPER DOWNLOAD INITIATED! 🚀');
+            } else {
+                // Final fallback: open in new tab to view the PDF
+                try {
+                    window.open('./src/assets/Blackpaper.pdf', '_blank');
                     this.showSuccessMessage('📄 BLACKPAPER OPENED IN NEW TAB! 🚀');
-                    console.log('📄 Blackpaper opened in new tab!');
+                    console.log('📄 Blackpaper opened in new tab as fallback!');
                     
                 } catch (finalError) {
                     console.error('All download methods failed:', finalError);
-                    alert('❌ Download temporarily unavailable. The sacred texts are being updated! 📄✨');
+                    
+                    // Show helpful error message
+                    alert(`❌ Unable to download Blackpaper.pdf. 
+                    
+Please check that the file exists at:
+📁 src/assets/Blackpaper.pdf
+
+Or try right-clicking the button and selecting "Save link as..." 📄✨`);
                 }
             }
         }
