@@ -30,11 +30,22 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --legacy-peer-deps
       
+    - name: Copy assets
+      run: |
+        mkdir -p dist/assets
+        cp -r src/assets/* dist/assets/ 2>/dev/null || echo "No assets to copy"
+        
     - name: Build project
       run: npm run build
+      continue-on-error: false
       
+    - name: Verify build output
+      run: |
+        ls -la dist/
+        echo "Build completed successfully"
+        
     - name: Setup Pages
       uses: actions/configure-pages@v4
       

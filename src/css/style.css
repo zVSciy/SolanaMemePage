@@ -69,6 +69,47 @@ body {
     transform: translateY(-2px);
 }
 
+/* Download Blackpaper button */
+.download-btn {
+    background: transparent;
+    border: 2px solid #ffeb3b;
+    color: #ffeb3b;
+    padding: 0.8rem 1.5rem;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 5px;
+    animation: glow-yellow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow-yellow {
+    from { 
+        box-shadow: 0 0 10px #ffeb3b;
+        text-shadow: 0 0 10px #ffeb3b;
+    }
+    to { 
+        box-shadow: 0 0 20px #ffeb3b, 0 0 30px #ffeb3b;
+        text-shadow: 0 0 15px #ffeb3b, 0 0 20px #ffeb3b;
+    }
+}
+
+.download-btn:hover {
+    background: #ffeb3b;
+    color: #000;
+    box-shadow: 0 0 25px #ffeb3b;
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Header actions */
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
 .wallet-info {
     display: flex;
     flex-direction: column;
@@ -287,5 +328,18 @@ body {
     
     .charts-section {
         grid-template-columns: 1fr;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    .neon-btn,
+    .download-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        width: 100%;
     }
 }
