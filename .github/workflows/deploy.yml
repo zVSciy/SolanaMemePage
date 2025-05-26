@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     
     steps:
     - name: Checkout
@@ -35,7 +35,8 @@ jobs:
     - name: Copy assets
       run: |
         mkdir -p dist/assets
-        cp -r src/assets/* dist/assets/ 2>/dev/null || echo "No assets to copy"
+        if (Test-Path "src/assets") { Copy-Item -Recurse "src/assets/*" "dist/assets/" } else { Write-Host "No assets to copy" }
+      shell: powershell
         
     - name: Build project
       run: npm run build
@@ -43,8 +44,9 @@ jobs:
       
     - name: Verify build output
       run: |
-        ls -la dist/
-        echo "Build completed successfully"
+        Get-ChildItem -Path "dist/" -Recurse
+        Write-Host "Build completed successfully"
+      shell: powershell
         
     - name: Setup Pages
       uses: actions/configure-pages@v4
@@ -58,7 +60,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
     if: github.ref == 'refs/heads/main'
     

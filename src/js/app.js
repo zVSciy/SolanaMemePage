@@ -194,22 +194,19 @@ class SolanaMoonDashboard {
         const audioBtn = document.getElementById('audioToggle');
         audioBtn.addEventListener('click', () => this.toggleAudio());
 
-        // Download button for Blackpaper - Enhanced setup
+        // Download button for Blackpaper - Fetch-based approach
         const downloadBtn = document.getElementById('downloadBlackpaper');
-        console.log('🔍 Download button element:', downloadBtn); // Debug log
+        console.log('🔍 Download button element:', downloadBtn);
         
         if (downloadBtn) {
             console.log('✅ Download button found! Setting up event listener...');
-            downloadBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                console.log('📄 Download button clicked!');
-                this.downloadBlackpaper();
-            });
             
-            // Force visibility
-            downloadBtn.style.display = 'inline-block';
-            downloadBtn.style.visibility = 'visible';
-            downloadBtn.style.opacity = '1';
+            // Replace the default href behavior with fetch download
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent default anchor behavior
+                console.log('📄 Download button clicked!');
+                this.downloadBlackpaperViaFetch();
+            });
             
             console.log('🚀 Download button fully initialized!');
         } else {
@@ -246,101 +243,213 @@ class SolanaMoonDashboard {
         // Create download button if it doesn't exist
         const headerActions = document.querySelector('.header-actions');
         if (headerActions) {
-            const downloadBtn = document.createElement('button');
-            downloadBtn.id = 'downloadBlackpaper';
-            downloadBtn.className = 'download-btn';
-            downloadBtn.textContent = '📄 BLACKPAPER';
-            downloadBtn.style.display = 'inline-block';
-            downloadBtn.style.visibility = 'visible';
-            downloadBtn.style.opacity = '1';
+            const downloadLink = document.createElement('a');
+            downloadLink.id = 'downloadBlackpaper';
+            downloadLink.className = 'download-btn';
+            downloadLink.href = '#'; // Use # to prevent navigation
+            downloadLink.textContent = '📄 BLACKPAPER';
+            downloadLink.title = 'Download Solana Moon Blackpaper';
             
-            downloadBtn.addEventListener('click', (e) => {
+            downloadLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                console.log('📄 Fallback download button clicked!');
-                this.downloadBlackpaper();
+                console.log('📄 Fallback download link clicked!');
+                this.downloadBlackpaperViaFetch();
             });
             
-            headerActions.appendChild(downloadBtn);
-            console.log('✅ Fallback download button created and added!');
+            headerActions.appendChild(downloadLink);
+            console.log('✅ Fallback download link created and added!');
         }
     }
 
-    downloadBlackpaper() {
-        console.log('🚀 Starting blackpaper download process...');
+    async downloadBlackpaperViaFetch() {
+        console.log('🚀 Starting fetch-based blackpaper download...');
         
-        try {
-
-            // Direct download of the actual Blackpaper.pdf file
-            const link = document.createElement('a');
-            link.href = './src/assets/Blackpaper.pdf';
-            link.download = 'Solana_Moon_Blackpaper.pdf';
-            link.style.display = 'none';
-            
-            // Add to DOM, click, and remove
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Show success message
-            this.showSuccessMessage('🚀 BLACKPAPER DOWNLOADED! READ THE SACRED TEXTS! 📄');
-            
-            console.log('✅ Blackpaper.pdf download completed successfully!');
-            
-        } catch (directError) {
-            console.error('Direct download failed:', directError);
-            
-            // Fallback 1: Try with different path variations
-            const alternatePaths = [
-                'src/assets/Blackpaper.pdf',
-                './assets/Blackpaper.pdf',
-                '../assets/Blackpaper.pdf',
-                '/src/assets/Blackpaper.pdf'
-            ];
-            
-            let downloadAttempted = false;
-            
-            for (const path of alternatePaths) {
-                try {
-                    const link = document.createElement('a');
-                    link.href = path;
-                    link.download = 'Solana_Moon_Blackpaper.pdf';
-                    link.style.display = 'none';
+        const possiblePaths = [
+            'src/assets/Blackpaper.pdf',
+            './src/assets/Blackpaper.pdf',
+            '/src/assets/Blackpaper.pdf',
+            'assets/Blackpaper.pdf'
+        ];
+        
+        for (const path of possiblePaths) {
+            try {
+                console.log(`📄 Trying to fetch: ${path}`);
+                
+                const response = await fetch(path);
+                
+                if (response.ok) {
+                    console.log(`✅ Successfully fetched from: ${path}`);
                     
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    // Get the PDF as a blob
+                    const blob = await response.blob();
                     
-                    console.log(`📄 Alternative download attempted with path: ${path}`);
-                    downloadAttempted = true;
-                    break;
-                } catch (error) {
-                    console.log(`Failed with path ${path}:`, error);
-                    continue;
+                    // Create object URL
+                    const objectUrl = URL.createObjectURL(blob);
+                    
+                    // Create download link
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = objectUrl;
+                    downloadLink.download = 'Solana_Moon_Blackpaper.pdf';
+                    downloadLink.style.display = 'none';
+                    
+                    // Trigger download
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    
+                    // Clean up object URL
+                    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+                    
+                    this.showSuccessMessage('🚀 BLACKPAPER DOWNLOADED! 📄');
+                    console.log('✅ Fetch download completed successfully!');
+                    return; // Success, exit function
+                    
+                } else {
+                    console.log(`❌ Failed to fetch ${path}: ${response.status} ${response.statusText}`);
                 }
-            }
-            
-            if (downloadAttempted) {
-                this.showSuccessMessage('📄 BLACKPAPER DOWNLOAD INITIATED! 🚀');
-            } else {
-                // Final fallback: open in new tab to view the PDF
-                try {
-                    window.open('./src/assets/Blackpaper.pdf', '_blank');
-                    this.showSuccessMessage('📄 BLACKPAPER OPENED IN NEW TAB! 🚀');
-                    console.log('📄 Blackpaper opened in new tab as fallback!');
-                    
-                } catch (finalError) {
-                    console.error('All download methods failed:', finalError);
-                    
-                    // Show helpful error message
-                    alert(`❌ Unable to download Blackpaper.pdf. 
-                    
-Please check that the file exists at:
-📁 src/assets/Blackpaper.pdf
-
-Or try right-clicking the button and selecting "Save link as..." 📄✨`);
-                }
+                
+            } catch (error) {
+                console.log(`❌ Error fetching ${path}:`, error);
             }
         }
+        
+        // If all fetch attempts failed, try alternative approaches
+        console.log('📄 All fetch attempts failed, trying alternative methods...');
+        this.tryAlternativeDownloadMethods();
+    }
+
+    tryAlternativeDownloadMethods() {
+        console.log('🔄 Trying alternative download methods...');
+        
+        // Method 1: Try opening in new window
+        try {
+            const newWindow = window.open('src/assets/Blackpaper.pdf', '_blank');
+            if (newWindow) {
+                this.showSuccessMessage('📄 BLACKPAPER OPENED IN NEW WINDOW! 🚀');
+                console.log('✅ Opened in new window successfully!');
+                return;
+            }
+        } catch (error) {
+            console.log('❌ New window method failed:', error);
+        }
+        
+        // Method 2: Try creating iframe for download
+        try {
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = 'src/assets/Blackpaper.pdf';
+            iframe.onload = () => {
+                this.showSuccessMessage('📄 BLACKPAPER LOADING VIA IFRAME! 🚀');
+                setTimeout(() => document.body.removeChild(iframe), 3000);
+            };
+            iframe.onerror = () => {
+                console.log('❌ Iframe method failed');
+                document.body.removeChild(iframe);
+                this.showManualDownloadInstructions();
+            };
+            document.body.appendChild(iframe);
+            console.log('📄 Trying iframe download method...');
+            return;
+        } catch (error) {
+            console.log('❌ Iframe method failed:', error);
+        }
+        
+        // Method 3: Show manual instructions
+        this.showManualDownloadInstructions();
+    }
+
+    showManualDownloadInstructions() {
+        console.log('📄 Showing manual download instructions...');
+        
+        const instructionDiv = document.createElement('div');
+        instructionDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #ffeb3b;
+            padding: 2rem;
+            border-radius: 15px;
+            font-family: Orbitron;
+            font-weight: 700;
+            font-size: 1.1rem;
+            z-index: 2000;
+            border: 2px solid #ffeb3b;
+            max-width: 700px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 235, 59, 0.5);
+        `;
+        
+        instructionDiv.innerHTML = `
+            <h3 style="color: #ff4444; margin-bottom: 1rem;">📄 MANUAL DOWNLOAD REQUIRED</h3>
+            <p style="margin-bottom: 1rem;">Auto-download failed, but you can access the file manually!</p>
+            
+            <div style="text-align: left; margin: 1rem 0; background: rgba(255, 235, 59, 0.1); padding: 1rem; border-radius: 10px;">
+                <strong>🔧 Direct Access Methods:</strong><br><br>
+                
+                <strong>1. Direct URL:</strong><br>
+                Copy this URL to your browser: <br>
+                <code style="background: rgba(0,0,0,0.7); padding: 0.3rem; word-break: break-all;">
+                ${window.location.origin}/src/assets/Blackpaper.pdf
+                </code><br><br>
+                
+                <strong>2. File System:</strong><br>
+                Navigate to: <br>
+                <code style="background: rgba(0,0,0,0.7); padding: 0.3rem;">
+                C:\\Users\\manag\\Documents\\GitHub\\Web3Page\\src\\assets\\Blackpaper.pdf
+                </code><br><br>
+                
+                <strong>3. Try Right-Click:</strong><br>
+                Right-click the BLACKPAPER button → "Save link as..."
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                <button id="tryDirectUrl" style="
+                    background: #00ff88;
+                    color: #000;
+                    border: none;
+                    padding: 0.8rem 1.5rem;
+                    border-radius: 25px;
+                    font-family: Orbitron;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">🌐 OPEN DIRECT URL</button>
+                
+                <button id="closeInstructions" style="
+                    background: #ffeb3b;
+                    color: #000;
+                    border: none;
+                    padding: 0.8rem 1.5rem;
+                    border-radius: 25px;
+                    font-family: Orbitron;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">UNDERSTOOD 🚀</button>
+            </div>
+        `;
+        
+        document.body.appendChild(instructionDiv);
+        
+        // Add click handlers
+        document.getElementById('tryDirectUrl').addEventListener('click', () => {
+            const directUrl = `${window.location.origin}/src/assets/Blackpaper.pdf`;
+            window.open(directUrl, '_blank');
+            this.showSuccessMessage('🌐 DIRECT URL OPENED! 📄');
+        });
+        
+        document.getElementById('closeInstructions').addEventListener('click', () => {
+            document.body.removeChild(instructionDiv);
+        });
+        
+        // Auto-remove after 15 seconds
+        setTimeout(() => {
+            if (document.body.contains(instructionDiv)) {
+                document.body.removeChild(instructionDiv);
+            }
+        }, 15000);
     }
 
     async connectWallet() {
