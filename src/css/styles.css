@@ -481,11 +481,12 @@ body {
     margin: 1rem 0;
 }
 
-/* Header actions */
+/* Header actions - Ensure proper display */
 .header-actions {
     display: flex;
     gap: 1rem;
     align-items: center;
+    flex-wrap: wrap; /* Allow wrapping if needed */
 }
 
 /* Audio button - Enhanced animation */
@@ -501,6 +502,8 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     animation: pulse-audio-strong 1.5s infinite;
+    border-radius: 5px;
+    white-space: nowrap;
 }
 
 @keyframes pulse-audio-strong {
@@ -527,38 +530,53 @@ body {
     animation: none;
 }
 
-/* Download Blackpaper button */
+/* Download Blackpaper button - Force visibility */
 .download-btn {
-    background: transparent;
-    border: 2px solid #ffeb3b;
-    color: #ffeb3b;
-    padding: 0.8rem 1.5rem;
-    font-family: 'Orbitron', monospace;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-radius: 5px;
-    animation: pulse-download 2s infinite;
+    background: transparent !important;
+    border: 2px solid #ffeb3b !important;
+    color: #ffeb3b !important;
+    padding: 0.8rem 1.5rem !important;
+    font-family: 'Orbitron', monospace !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    border-radius: 5px !important;
+    animation: pulse-download 2s infinite !important;
+    display: inline-block !important; /* Force display */
+    visibility: visible !important; /* Force visibility */
+    opacity: 1 !important; /* Force opacity */
+    z-index: 999 !important; /* Bring to front */
+    position: relative !important; /* Ensure positioning */
+    white-space: nowrap !important; /* Prevent text wrapping */
+    min-width: fit-content !important; /* Ensure proper width */
 }
 
 @keyframes pulse-download {
     0%, 100% {
-        box-shadow: 0 0 10px #ffeb3b;
+        box-shadow: 0 0 10px #ffeb3b, 0 0 20px #ffeb3b;
         transform: scale(1);
+        text-shadow: 0 0 10px #ffeb3b;
     }
     50% {
-        box-shadow: 0 0 20px #ffeb3b, 0 0 30px #ffeb3b;
+        box-shadow: 0 0 20px #ffeb3b, 0 0 30px #ffeb3b, 0 0 40px #ffeb3b;
         transform: scale(1.02);
+        text-shadow: 0 0 15px #ffeb3b, 0 0 20px #ffeb3b;
     }
 }
 
 .download-btn:hover {
-    background: #ffeb3b;
-    color: #000;
-    box-shadow: 0 0 25px #ffeb3b;
-    transform: translateY(-2px) scale(1.05);
+    background: #ffeb3b !important;
+    color: #000 !important;
+    box-shadow: 0 0 25px #ffeb3b, 0 0 35px #ffeb3b !important;
+    transform: translateY(-2px) scale(1.05) !important;
+    text-shadow: none !important;
+}
+
+.download-btn:active {
+    transform: translateY(0) scale(1) !important;
+    box-shadow: 0 0 15px #ffeb3b !important;
 }
 
 /* Responsive */
@@ -638,5 +656,21 @@ body {
     
     .meme-text.secondary {
         font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-actions {
+        flex-direction: column; /* Stack buttons vertically on very small screens */
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    .audio-btn,
+    .download-btn {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0.7rem 1rem !important;
+        font-size: 0.9rem !important;
     }
 }
