@@ -2,17 +2,17 @@
 
 A cyberpunk-themed Solana dashboard featuring real-time price data, network statistics, and the latest memecoin launches from pump.fun and Raydium. Built with modern web technologies and designed for maximum meme energy!
 
-## ✨ Features
+## Features
 
-- 🎬 **Immersive Background Video** - Cyberpunk aesthetics with transparent UI elements
-- 🎵 **Epic Background Music** - Dual audio tracks with auto-play and volume boost
-- 📊 **Real-time Solana Data** - Live SOL price from Jupiter API with 3-day price history
-- 🚀 **Memecoin Tracking** - Latest launches from pump.fun and Raydium with epic names
-- 💎 **Wallet Integration** - Connect your Phantom wallet
-- 📈 **Interactive Charts** - Price history and network activity visualization
-- 🌙 **Meme Aesthetics** - Floating emojis, neon effects, and bouncing animations
+- **Immersive Background Video** - Cyberpunk aesthetics with transparent UI elements
+- **Epic Background Music** - Dual audio tracks with auto-play and volume boost
+- **Real-time Solana Data** - Live SOL price from Jupiter API with 3-day price history
+- **Memecoin Tracking** - Latest launches from pump.fun and Raydium with epic names
+- **Wallet Integration** - Connect your Phantom wallet
+- **Interactive Charts** - Price history and network activity visualization
+- **Meme Aesthetics** - Floating emojis, neon effects, and bouncing animations
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: Vanilla JavaScript, CSS3, HTML5
 - **Charts**: Chart.js
@@ -21,7 +21,7 @@ A cyberpunk-themed Solana dashboard featuring real-time price data, network stat
 - **APIs**: Jupiter, CoinGecko, Raydium, Solana RPC
 - **Deployment**: Docker & Docker Compose
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -73,7 +73,7 @@ A cyberpunk-themed Solana dashboard featuring real-time price data, network stat
    - Development: `http://localhost:9000`
    - Production: `http://localhost:80`
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Web3Page/
@@ -92,24 +92,24 @@ Web3Page/
 └── README.md           # This file
 ```
 
-## 🎮 Usage
+## Usage
 
 ### Audio Controls
-- 🔊 **Sound Toggle**: Click the audio button in the header to control music
-- 🎵 **Auto-play**: Music starts automatically at maximum volume with gain boost
-- 🔄 **Track Cycling**: Two tracks loop continuously with seamless transitions
+- **Sound Toggle**: Click the audio button in the header to control music
+- **Auto-play**: Music starts automatically at maximum volume with gain boost
+- **Track Cycling**: Two tracks loop continuously with seamless transitions
 
 ### Wallet Connection
-- 💳 **Phantom Wallet**: Click "CONNECT WALLET" to link your Phantom wallet
-- 💰 **Balance Display**: View your SOL balance after connection
-- 🔐 **Secure**: Uses official Phantom wallet adapter
+- **Phantom Wallet**: Click "CONNECT WALLET" to link your Phantom wallet
+- **Balance Display**: View your SOL balance after connection
+- **Secure**: Uses official Phantom wallet adapter
 
 ### Data Filtering
-- 🎯 **Platform Filter**: Switch between ALL, PUMP.FUN, and RAYDIUM
-- 📊 **Real-time Updates**: Data refreshes automatically
-- 🚀 **Moon Buttons**: Click for meme reactions
+- **Platform Filter**: Switch between ALL, PUMP.FUN, and RAYDIUM
+- **Real-time Updates**: Data refreshes automatically
+- **Moon Buttons**: Click for meme reactions
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 ```bash
@@ -123,30 +123,7 @@ CHOKIDAR_USEPOLLING=true     # For Docker file watching
 - **Raydium**: `https://api.raydium.io/v2/main/pairs` - DEX pair data
 - **Solana RPC**: `https://api.mainnet-beta.solana.com` - Network stats
 
-## 🎨 Customization
-
-### Adding New Meme Names
-Edit the arrays in `src/js/app.js`:
-```javascript
-const epicMemeNames = [
-    'YOUR EPIC MEME NAME',
-    // Add more...
-];
-```
-
-### Styling Changes
-Modify `src/css/styles.css` for:
-- Color schemes
-- Animation speeds
-- Transparency levels
-- Layout adjustments
-
-### Audio/Video
-Replace files in `src/assets/` with your own media:
-- Supported video: MP4, WebM
-- Supported audio: MP3, WAV, OGG
-
-## 🚀 Deployment
+## Deployment
 
 ### Production Build
 ```bash
@@ -167,22 +144,7 @@ docker run -p 80:9000 solana-moon-dashboard
 2. Update `nginx.conf` with SSL configuration
 3. Run with production profile
 
-## 🐛 Troubleshooting
-
-### Audio Issues
-- **No Sound**: Check browser autoplay policies
-- **Low Volume**: Ensure system volume is up
-- **Gain Boost Failed**: Check browser Web Audio API support
-
-### Video Issues
-- **No Video**: Verify file path and format support
-- **Performance**: Reduce video quality or opacity for better performance
-
-### API Issues
-- **Price Data Failed**: Check network connection and API limits
-- **CORS Errors**: Use production deployment with proper headers
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/epic-feature`)
@@ -190,7 +152,7 @@ docker run -p 80:9000 solana-moon-dashboard
 4. Push to the branch (`git push origin feature/epic-feature`)
 5. Open a Pull Request
 
-## 📜 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
@@ -204,11 +166,4 @@ Built with 💎🙌 by diamond hands for diamond hands.
 
 *"The moon is not our destination, it's just a pit stop on our way to the stars!"* ⭐
 
-## 🙏 Acknowledgments
-
-- Solana ecosystem for the amazing blockchain
-- Chart.js for beautiful visualizations
-- The meme community for endless inspiration
-- All the diamond hands HODLers 💎🙌
-
-**WAGMI** 🚀🌙
+# All the diamond hands HODLers 💎🙌
